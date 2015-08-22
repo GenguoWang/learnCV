@@ -25,6 +25,7 @@
 		DC5920F81B8817C50027AB20 /* libopencv_video.3.0.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = DC5920E81B8817C50027AB20 /* libopencv_video.3.0.0.dylib */; };
 		DC5920F91B8817C50027AB20 /* libopencv_videoio.3.0.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = DC5920E91B8817C50027AB20 /* libopencv_videoio.3.0.0.dylib */; };
 		DC5920FA1B8817C50027AB20 /* libopencv_videostab.3.0.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = DC5920EA1B8817C50027AB20 /* libopencv_videostab.3.0.0.dylib */; };
+		DC7337C91B88C52F00669898 /* libluajit.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = DC7337C41B88C52F00669898 /* libluajit.dylib */; };
 		DC98A75D1B880C87001FD337 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DC98A75C1B880C87001FD337 /* main.cpp */; };
 /* End PBXBuildFile section */
 
@@ -59,6 +60,7 @@
 		DC5920E81B8817C50027AB20 /* libopencv_video.3.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_video.3.0.0.dylib; path = ../../../../../usr/local/lib/libopencv_video.3.0.0.dylib; sourceTree = "<group>"; };
 		DC5920E91B8817C50027AB20 /* libopencv_videoio.3.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_videoio.3.0.0.dylib; path = ../../../../../usr/local/lib/libopencv_videoio.3.0.0.dylib; sourceTree = "<group>"; };
 		DC5920EA1B8817C50027AB20 /* libopencv_videostab.3.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_videostab.3.0.0.dylib; path = ../../../../../usr/local/lib/libopencv_videostab.3.0.0.dylib; sourceTree = "<group>"; };
+		DC7337C41B88C52F00669898 /* libluajit.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libluajit.dylib; path = ../../../workshop/torch/install/lib/libluajit.dylib; sourceTree = "<group>"; };
 		DC98A7591B880C87001FD337 /* learnCV */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = learnCV; sourceTree = BUILT_PRODUCTS_DIR; };
 		DC98A75C1B880C87001FD337 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -79,6 +81,7 @@
 				DC5920F41B8817C50027AB20 /* libopencv_shape.3.0.0.dylib in Frameworks */,
 				DC5920F11B8817C50027AB20 /* libopencv_ml.3.0.0.dylib in Frameworks */,
 				DC5920ED1B8817C50027AB20 /* libopencv_flann.3.0.0.dylib in Frameworks */,
+				DC7337C91B88C52F00669898 /* libluajit.dylib in Frameworks */,
 				DC5920F51B8817C50027AB20 /* libopencv_stitching.3.0.0.dylib in Frameworks */,
 				DC5920EF1B8817C50027AB20 /* libopencv_imgcodecs.3.0.0.dylib in Frameworks */,
 				DC5920EC1B8817C50027AB20 /* libopencv_features2d.3.0.0.dylib in Frameworks */,
@@ -95,6 +98,7 @@
 		DC5920D61B8815FE0027AB20 /* libs */ = {
 			isa = PBXGroup;
 			children = (
+				DC7337C41B88C52F00669898 /* libluajit.dylib */,
 				DC5920DB1B8817C50027AB20 /* libopencv_calib3d.3.0.0.dylib */,
 				DC5920DC1B8817C50027AB20 /* libopencv_features2d.3.0.0.dylib */,
 				DC5920DD1B8817C50027AB20 /* libopencv_flann.3.0.0.dylib */,
@@ -290,8 +294,18 @@
 					"$(inherited)",
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
 					/usr/local/include,
+					/Users/kingo/workshop/torch/install/include,
 				);
-				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				LIBRARY_SEARCH_PATHS = (
+					/usr/local/lib,
+					/Users/kingo/workshop/torch/install/lib,
+				);
+				OTHER_LDFLAGS = (
+					"-pagezero_size",
+					10000,
+					"-image_base",
+					100000000,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -303,8 +317,18 @@
 					"$(inherited)",
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
 					/usr/local/include,
+					/Users/kingo/workshop/torch/install/include,
 				);
-				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				LIBRARY_SEARCH_PATHS = (
+					/usr/local/lib,
+					/Users/kingo/workshop/torch/install/lib,
+				);
+				OTHER_LDFLAGS = (
+					"-pagezero_size",
+					10000,
+					"-image_base",
+					100000000,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
