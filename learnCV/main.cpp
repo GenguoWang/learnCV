@@ -7,6 +7,7 @@
 //
 
 #include <iostream>
+#include <sstream>
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <fstream>
@@ -23,6 +24,7 @@ using std::fstream;
 using std::string;
 
 std::string DataPrefix = "/Users/kingo/Documents/Projects/learnCV/learnCV/data/";
+std::string TmpPrefix = "/Users/kingo/Documents/Projects/learnCV/learnCV/tmp/";
 char labelName[] = {'2','3','4','5','6','7','8','9','T','J','Q','K','A','B'};
 int getLabel(const char *name);
 int getLabel(lua_State *L,const char *name);
@@ -51,15 +53,42 @@ void getPicture(Mat &src, Mat &dst, int index)
  }
  
  */
-void testCrop()
+
+void drawTest(Mat &img, std::string text)
 {
-    string filename = DataPrefix + "card.png";
+    int fontFace = FONT_HERSHEY_PLAIN;//FONT_HERSHEY_SCRIPT_SIMPLEX;
+    double fontScale = 2;
+    int thickness = 2;
+    
+    
+    int baseline=0;
+    int margin = 10;
+    Size textSize = getTextSize(text, fontFace,
+                                fontScale, thickness, &baseline);
+    baseline += thickness;
+    
+    // center the text
+    std::cout << img.cols << " " << img.rows << std::endl;
+    Point textOrg(img.cols - textSize.width-margin,
+                  textSize.height+margin);
+    
+    // draw the box
+    rectangle(img, textOrg+Point(-margin,margin),
+              textOrg + Point(textSize.width+margin, -textSize.height-margin),
+              Scalar(0,0,255),-1);
+    
+    // then put the text itself
+    putText(img, text, textOrg, fontFace, fontScale,
+            Scalar::all(255), thickness, CV_AA);
+}
+void handleCard(string cardName)
+{
+    string filename = DataPrefix + cardName;
     Mat org = imread(filename);
-    imshow("org", org);
-    //cout << pre+filename << " " << org.size().height << " " << org.size().width<<" "<<label << endl;
     Mat dst[5];
     Size dstSize(25, 36);
     int len = 91;
+    string label = "";
     for (int i = 0; i < 5; ++i)
     {
         getRectSubPix(org, dstSize, Point2f(355 + i*len, 257), dst[i]);
@@ -68,28 +97,34 @@ void testCrop()
         threshold(gray, gray, 80, 255, THRESH_BINARY);
         resize(gray, gray, Size(), 0.5, 0.5);
         imshow(string("out")+char('0'+i),gray);
-        string outFileName = DataPrefix + string("out") + char('0'+i) +".jpg";
+        string outFileName = TmpPrefix + string("out") + char('0'+i) +".jpg";
         imwrite(outFileName,gray);
         int idx = getLabel(outFileName.c_str());
         if(idx >=1 && idx <= 14)
         {
             std::cout << labelName[idx-1] << std::endl;
+            label += labelName[idx-1];
         }
         else{
             std::cout << "unknow" << std::endl;
         }
     }
+    drawTest(org, label);
+    imshow("org", org);
 }
+
 lua_State *g_L;
+
 int getLabel(const char *name){
     return getLabel(g_L,name);
 }
+
 int getLabel(lua_State *L, const char *name) {
     double z;
     /* push functions and arguments */
     lua_getglobal(L, "getLabel");  /* function to be called */
     lua_pushstring(L,name);
-    /* do the call (2 arguments, 1 result) */
+    /* do the call (1 arguments, 1 result) */
     if (lua_pcall(L, 1, 1, 0) != 0)
     {
         fprintf(stderr, "%s\n", lua_tostring(L, -1));
@@ -102,40 +137,39 @@ int getLabel(lua_State *L, const char *name) {
 }
 
 int main(int argc, const char * argv[]) {
-    // insert code here...
-//     std::cout << "Hello, World!\n";
-//     cv::Mat mat = cv::imread(DataPrefix + "test.jpg");
-//     cv::blur(mat, mat, cv::Size(5,5));
-//     cv::Mat gray;
-//     cv::cvtColor(mat, gray, CV_RGB2GRAY);
-//     cv::imshow("test", mat);
-//     cv::imshow("gray", gray);
-    char buff[256];
-    int error;
     lua_State *L = luaL_newstate();
     g_L = L;
-    luaopen_io(L); // provides io.*
+    luaopen_io(L);
     luaopen_base(L);
     luaopen_table(L);
     luaopen_string(L);
     luaopen_math(L);
-    luaL_openlibs(L);        /* opens the standard libraries */
+    luaL_openlibs(L);
     int s = luaL_dofile(L, (DataPrefix+"getLabel.lua").c_str());
-    //luaL_dofile(<#L#>, <#fn#>)
     if(s){
         fprintf(stderr, "%s\n", lua_tostring(L, -1));
         lua_pop(L, 1);  /* pop error message from the stack */
     }
-//    std::cout << getLabel(L,"wgg") << std::endl;
-//    while (fgets(buff, sizeof(buff), stdin) != NULL) {
-//        error = luaL_loadstring(L, buff) || lua_pcall(L, 0, 0, 0);
-//        if (error) {
-//            fprintf(stderr, "%s\n", lua_tostring(L, -1));
-//            lua_pop(L, 1);  /* pop error message from the stack */
-//        }
-//    }
-    testCrop();
-    cv::waitKey();
+    int idx = 0;
+    while (true) {
+        std::ostringstream ostr;
+        ostr << "card" << idx << ".png";
+        handleCard(ostr.str());
+        int key = cv::waitKey();
+        std::cout << key << std::endl;
+        if(key == 63234){
+            idx--;
+        }
+        else if(key == 63235)
+        {
+            idx++;
+        }
+        else{
+            break;
+        }
+        if(idx < 0) idx = 0;
+        if(idx > 2) idx = 2;
+    }
     lua_close(L);
     return 0;
 }
