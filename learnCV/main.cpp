@@ -11,6 +11,8 @@
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <fstream>
+#include <vector>
+using std::vector;
 extern "C" {
     #include <lua.h>
     #include <lauxlib.h>
@@ -22,12 +24,15 @@ using std::ifstream;
 using std::ofstream;
 using std::fstream;
 using std::string;
+using std::cout;
+using std::endl;
 
 std::string DataPrefix = "/Users/kingo/Documents/Projects/learnCV/learnCV/data/";
 std::string TmpPrefix = "/Users/kingo/Documents/Projects/learnCV/learnCV/tmp/";
 char labelName[] = {'2','3','4','5','6','7','8','9','T','J','Q','K','A','B'};
 int getLabel(const char *name);
 int getLabel(lua_State *L,const char *name);
+RNG rng(12345);
 void getPicture(Mat &src, Mat &dst, int index)
 {
     Size dstSize(25, 36);
@@ -136,7 +141,8 @@ int getLabel(lua_State *L, const char *name) {
     return z;
 }
 
-int main(int argc, const char * argv[]) {
+void cardRecognizer()
+{
     lua_State *L = luaL_newstate();
     g_L = L;
     luaopen_io(L);
@@ -171,5 +177,126 @@ int main(int argc, const char * argv[]) {
         if(idx > 2) idx = 2;
     }
     lua_close(L);
+}
+
+void fdivp2()
+{
+    std::string filename = "/Users/kingo/workshop/learning/FDIVP/digital_images_week2_quizzes_lena.gif";
+    Mat org = imread(filename);
+    std::cout << org.size[0] << std::endl;
+    //imshow("org", org);
+    //waitKey();
+}
+
+bool is_border(cv::Mat& edge, uchar color)
+{
+    cv::Mat im = edge.clone().reshape(0,1);
+    
+    bool res = true;
+    for (int i = 0; i < im.cols; ++i)
+        res &= (color == im.at<uchar>(0,i));
+    
+    return res;
+}
+
+/**
+ * Function to auto-cropping image
+ *
+ * Parameters:
+ *   src   The source image
+ *   dst   The destination image
+ */
+void autocrop(cv::Mat& src, cv::Mat& dst)
+{
+    cv::Rect win(0, 0, src.cols, src.rows);
+    
+    std::vector<cv::Rect> edges;
+    edges.push_back(cv::Rect(0, 0, src.cols, 1));
+    edges.push_back(cv::Rect(src.cols-2, 0, 1, src.rows));
+    edges.push_back(cv::Rect(0, src.rows-2, src.cols, 1));
+    edges.push_back(cv::Rect(0, 0, 1, src.rows));
+    
+    cv::Mat edge;
+    int nborder = 0;
+    uchar color = 255;
+    
+    bool next;
+    
+    do {
+        edge = src(cv::Rect(win.x, win.height-2, win.width, 1));
+        if (next = is_border(edge, color))
+            win.height--;
+    }
+    while (next && win.height > 0);
+    
+    do {
+        edge = src(cv::Rect(win.width-2, win.y, 1, win.height));
+        if (next = is_border(edge, color))
+            win.width--;
+    }
+    while (next && win.width > 0);
+    
+    do {
+        edge = src(cv::Rect(win.x, win.y, win.width, 1));
+        if (next = is_border(edge, color))
+            win.y++, win.height--;
+    }
+    while (next && win.y <= src.rows);
+    
+    do {
+        edge = src(cv::Rect(win.x, win.y, 1, win.height));
+        if (next = is_border(edge, color))
+            win.x++, win.width--;
+    }
+    while (next && win.x <= src.cols);
+    
+    dst = src(win);
+}
+
+void cropEmpty()
+{
+    std::string filename = TmpPrefix+"out4.jpg";
+    Mat org = imread(filename);
+    imshow("org", org);
+    Mat larger = org.clone();
+    resize(org, larger, Size(),3,3);
+    cvtColor(larger, larger, COLOR_RGB2GRAY);
+    threshold(larger, larger, 150, 255, THRESH_BINARY);
+    imshow("larger", larger);
+    cout << "type " << org.depth() << " " << org.channels() << endl;
+    
+    Mat canny_output;
+    vector<vector<Point> > contours;
+    vector<Vec4i> hierarchy;
+    
+    /// Detect edges using canny
+    int thresh = 100;
+    Canny( larger, canny_output, thresh, thresh*2, 3 );
+    imshow("canny", canny_output);
+    /// Find contours
+    findContours( canny_output, contours, hierarchy, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0) );
+    imshow("larger",larger);
+    Mat drawing = Mat::zeros( canny_output.size(), CV_8UC3 );
+    for( size_t i = 0; i< contours.size(); i++ )
+    {
+        Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
+        drawContours( drawing, contours, (int)i, color, 2, 8, hierarchy, 0, Point() );
+    }
+    
+    /// Show in a window
+    namedWindow( "Contours", WINDOW_AUTOSIZE );
+    imshow( "Contours", drawing );
+    cout << contours.size() << endl;
+    Rect bound = boundingRect(contours[0]);
+    Mat croped;
+    autocrop(larger, croped);
+    imshow("croped",croped);
+    
+    waitKey();
+}
+
+int main(int argc, const char * argv[]) {
+    cropEmpty();
+    //cardRecognizer();
     return 0;
 }
